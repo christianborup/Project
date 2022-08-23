@@ -1,0 +1,1073 @@
+#Making a Multi-purpose calculator
+
+#Import and set up variables
+import pygame, math, sys
+from pygame import *
+from math import *
+pygame.init()
+
+#Setting up the different fonts I will be using
+mainFont = pygame.font.SysFont('Verdana',16)
+titleFont = pygame.font.SysFont('Serif',24)
+smallFont = pygame.font.SysFont("Arial",12)
+
+#Setting up the different colours I will be using often
+white = (255, 255, 255)
+black = (0,0,0)
+gridColour = (100,250,240)  #light blue
+titleColour = (200,0,150) #Darker purple
+
+#Setting the values I will be using when printing messages to the screen 
+width = 600
+height = 600
+fullWidth = 1000
+
+#Giving the tab a caption
+screen = pygame.display.set_mode((fullWidth,height))
+pygame.display.set_caption("Graphing and polynomial calculator")
+
+#Setting Variables later used to their start state
+equationsDraw = [] #Used to store all entered functions
+sizeChange = False #Used to determine whether or not the graph needs to be resized
+
+
+
+#Creating a front page for the programme from which all features can be accessed
+def main(): 
+
+    #Initially making the screen all white
+    screen.set_clip(0,0, fullWidth, height)
+    screen.fill(white)
+    screen.set_clip(None) 
+
+
+    #Printing messages to the screen
+    title = titleFont.render("Welcome to the mulitpurpose calculator", 1, titleColour) #Title
+    screen.blit(title, (width/2, 10))
+    instruct = mainFont.render("If you wish to draw a graph of a given equation please select 'g'. ", 1, black)
+    screen.blit(instruct, (30, 50))
+    instruct = mainFont.render("If you wish to differentiate or integrate a given polynomial please select 'p'. ", 1, black)
+    screen.blit(instruct,(30, 80))
+
+
+    cont = True #Variable used for while loop
+
+    while cont: #Loop for user to enter a command.
+        pygame.display.update() #Updating the screen continuously
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: #If the user exits the app
+                cont = False #The loop ends
+            elif event.type == pygame.KEYDOWN:
+
+                if event.key == K_g: #If the user enters 'g' we go to the graph function
+                    grapher.Graph()
+                elif event.key ==  K_p: #If the user enters 'p' we call the function that lets the user enter a polynomial
+                    polynomialCalculator.RunCalc()
+    
+    #The program quits
+    pygame.quit()
+    sys.exit()
+
+#Class that defines the graphing part of the calculator
+class Grapher():
+
+    def __init__(self, k):
+        self.__k = k #K represents the size of a box in the graph, ie the distance between horizontal lines and the distance between vertical lines.
+        self.__eq = None #The equations entered by the user that will be drawn onto the graph
+
+    #The method that creates the graph
+    def Graph(self, valid = True):
+
+        #Setting an initial value for self.__k, the pixels per unit grid
+        self.__k = 25
+
+        #If the user is entering an equation for the first time he is shown the inititial instructions again
+        if valid == True:
+            grapher.__graphPaper() #Calling the method that creates graph paper
+
+            #Printing instructions and messages to the user
+            title = titleFont.render("Graph", 1, titleColour)
+            screen.blit(title, (width + 10, 20))
+
+            instruct = mainFont.render("Please enter your equation", 1, black)
+            screen.blit(instruct, (width + 10, 70))
+
+            instruct = mainFont.render("Select 'enter' when done", 1, black)
+            screen.blit(instruct, (width + 10, 100))
+
+            instruct = mainFont.render("Select 'f' to return to the front page. ", 1, black)
+            screen.blit(instruct, (width + 10, 130))
+
+            instruct = mainFont.render("Keys: ", 1, black)
+            screen.blit(instruct, (width + 10, 160))
+
+            instruct = smallFont.render("s: sin(), c: cos(), t: tan(),  p: π, e: e, n: ln(), l: log10(), r: sqrt(), a: abs()", 1, black)
+            screen.blit(instruct, (width+10, 180))
+
+        
+        equation = [] # start an array that will hold equation entered by the user
+
+        done = False #variable used to determine if the user wants to exit the program
+
+        
+        inputNotDone = True #Variable used for loop
+
+        while inputNotDone:
+            #Update the screen
+            screen.set_clip(width+10, height-30, fullWidth, height)
+            screen.fill(white)
+
+            preSymbols = "1234567890)eπ" #All symbols that are multiplicative when put in front of 'x'
+            postSymbols = "(cstal" #All symbols that are multiplicative with 'x' when after 'x'
+
+            #Joining all consecutive elements in eq together into a string
+            eq = " ".join(equation)
+            eq = eq.replace(" ", "")
+
+
+
+            #Adding a *(multiplicative sign) into the equation where needed f.eks. 9x -> 9*x
+
+            for symbol in preSymbols:
+                oldSymbol = symbol + "x"
+                newSymbol = symbol + "*x"
+                eq = eq.replace(oldSymbol,newSymbol)
+            
+            for symbol in postSymbols:
+                oldSymbol = "x" + symbol
+                newSymbol = "x*" + symbol
+                eq = eq.replace(oldSymbol, newSymbol)
+            
+            #Displaying the equation entered by the user, back to the screen
+            instruct = mainFont.render("Function: y ="+eq, 1, titleColour)
+            screen.blit(instruct,(width+10,height-30))
+
+
+            pygame.display.update() #Updating the display
+
+            #What to do for different inputs
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: #If the user tries to quit the program it must be closed properly
+                    inputNotDone = False #The loop is closed
+                    done = True #The variable is set to true to represent that the user wants to exit the program
+                
+                
+                elif event.type == pygame.KEYDOWN:
+                    #If one of the mathematical signs below is entered it is appended to equation
+                    if event.unicode == u'*':
+                        equation.append("*")
+                    elif event.unicode == u'/':
+                        equation.append("/")
+                    elif event.unicode == u'+':
+                        equation.append("+")
+                    elif event.unicode == u'-':
+                        equation.append("-")
+                    elif event.unicode == u'.':
+                        equation.append(".")
+                    elif event.unicode == u'(':
+                        equation.append("(")
+                    elif event.unicode == u')':
+                        equation.append(")")
+                    elif event.unicode == u'^':
+                        equation.append("**")
+                    
+                    
+                    
+                    #numerical inputs are appended to equation
+                    elif event.key == K_1:
+                        equation.append("1")
+                    elif event.key == K_2:
+                        equation.append("2")
+                    elif event.key == K_3:
+                        equation.append("3")
+                    elif event.key == K_4:
+                        equation.append("4")
+                    elif event.key == K_5:
+                        equation.append("5")
+                    elif event.key == K_6:
+                        equation.append("6")
+                    elif event.key == K_7:
+                        equation.append("7")
+                    elif event.key == K_8:
+                        equation.append("8")
+                    elif event.key == K_9:
+                        equation.append("9")
+                    elif event.key == K_0:
+                        equation.append("0")
+                    
+                    # The different letters entered each represent a mathematical function that is appended to equation
+                    elif event.key == K_s:
+                        equation.append("sin(")
+                    elif event.key == K_c:
+                        equation.append("cos(")
+                    elif event.key == K_t:
+                        equation.append("tan(")
+                    elif event.key == K_e:
+                        equation.append("e")
+                    elif event.key == K_p:
+                        equation.append("π")
+                    elif event.key == K_n:
+                        equation.append("log(")
+                    elif event.key == K_l:
+                        equation.append("log10(")
+                    elif event.key == K_a:
+                        equation.append("abs(")
+                    elif event.key == K_r:
+                        equation.append("sqrt(")
+
+                    #The variable 'x' is appended to equation
+                    elif event.key == K_x:
+                        equation.append("x")
+
+                    #Deletes the last element in equation
+                    elif event.key == K_BACKSPACE and equation !=[]:
+                        equation.pop()
+                    
+                    #The user restarts the graphing calculator when q is entered
+                    elif event.key == K_q:
+                        grapher.Graph()
+
+                    #When the user selects 'f' he returns to the main
+                    elif event.key == K_f:
+                        main()
+
+                    #When the user selects 'enter' they are done entering their function and the loop ends so the next part of the programme can be accessed
+                    elif event.key == K_RETURN:
+                        inputNotDone = False
+        
+        #Depending on previous inputs the program quits or the graphing calculator moves to the next step
+        if done:
+            #only thing left to do is quit
+            pygame.quit()
+        else:
+            # clip rigth side of the screen (except equation) and set to white so new messages can be printed
+            screen.set_clip(width, 0, fullWidth, height-30)
+            screen.fill(white)
+            screen.set_clip(None)
+        
+
+            
+            self.__eq = eq #Setting the eq atttribute of the instance to the equation entered
+            grapher.__DrawGraph() #Calling the method that draws the function entered
+        sys.exit()
+
+    #Method that creates the graphpaper
+    def __graphPaper(self):
+
+        #Initially setting the screen to be all white, getting rid of previous messages on the screen
+        screen.set_clip(0,0,fullWidth,height)
+        screen.fill(white)
+
+        #draw graph paper
+        for i in range(width//self.__k): #Setting up graphpaper
+            grid = self.__k*i #since graph is a square grid represents where the gridlines are drawn in terms of both x and y axis
+
+            pygame.draw.line(screen, gridColour, (grid,0), (grid,height), 1)
+            pygame.draw.line(screen, gridColour, (0,grid), (width,grid), 1)
+
+        #Extra thick line to seperate graph and messages
+        pygame.draw.line(screen, black, (width,0), (width,height), 5)
+
+        #Drawing the x and y axis
+        midx, midy = width //2 , height // 2
+        pygame.draw.line(screen, black, (midx,0), (midx,height), 3)
+        pygame.draw.line(screen, black, (0,midy), (width,midy), 3)
+        
+        #Setting up values on the axes dependent on the scale of the graph
+        num = 250/self.__k
+        instruct = mainFont.render(str(num), 1, black)
+        screen.blit(instruct, (midx-40, 40))
+        instruct = mainFont.render(str(num/2), 1, black)
+        screen.blit(instruct, (midx-40, 165))
+        instruct = mainFont.render(str(-num/2), 1, black)
+        screen.blit(instruct, (midx-40, 415))
+        instruct = mainFont.render(str(-num), 1, black)
+        screen.blit(instruct, (midx-48, 540))
+
+        instruct = mainFont.render("0", 1, black)
+        screen.blit(instruct, (midx-16, 300))
+        
+        instruct = mainFont.render(str(-num), 1, black)
+        screen.blit(instruct, (38, midy))
+        instruct = mainFont.render(str(-num/2), 1, black)
+        screen.blit(instruct, (165, midy))
+        instruct = mainFont.render(str(num/2), 1, black)
+        screen.blit(instruct, (415, midy))
+        instruct = mainFont.render(str(num), 1, black)
+        screen.blit(instruct, (540, midy))
+
+
+        #clip reset to all the window
+        screen.set_clip(None)
+        
+    #The method that draws the functions entered by the user and gives the option to rescale the graph
+    def __DrawGraph(self):
+        #Making sizeChange and equationsDraw global so they can be accessed from within the method
+        global equationsDraw
+        global sizeChange
+
+        #A procedure defining the steps to resize the graph according the users preference
+        def graphSizer(k):
+            global sizeChange 
+            self.__k = k 
+            sizeChange = True #Saying the graph needs to be resized
+            equationsDraw.append(self.__eq) #Adding the entered function to the list of entered equations
+            grapher.__graphPaper() #Redrawing the resized graph paper with the new value of k
+            grapher.__DrawGraph() #Redrawing the equations on the resized graph paper
+        
+        #A procedure that draws the equation saved as self.__eq onto the graph
+        def drawEquations():
+            #Draw lines between points on equation for the entire width of the graph
+            for i in range(width):
+                try:
+                    x = ((width/2)-i)/self.__k #First x value
+                    y = eval(self.__eq) #First y value
+                    pos1 = ((width/2)+ x*self.__k, height/2-y*self.__k) #First coordinate/point of the equation on the graph
+
+                    X2 = x = ((width/2)-(i+1))/self.__k  #Second x value
+                    Y2 = eval(self.__eq) #Second y value
+                    pos2 = ((width/2)+X2*self.__k, (height/2)-Y2*self.__k) #Second coordinate/point of the equation on the graph
+
+                    
+                    pygame.draw.line(screen, (0,0,255), pos1, pos2, 4) #Draw a line between the points
+                except:
+                    pass
+        
+        #Drawing the equations
+        if sizeChange == True: #If the graph has been resized
+            sizeChange = False #Reset the variable so the graph no longer get resized
+            
+            #Drawing the equations
+            #For every equation stored in equationsDraw, call drawEquations
+            for j in range(len(equationsDraw)+1):
+                self.__eq = equationsDraw[j-1]
+                drawEquations()
+    
+        else: #No need to redraw all equations as graph not resized
+            drawEquations() 
+
+        #clip the screen to keep text clean
+        screen.set_clip(width,0,fullWidth,height-30)
+        
+        #Title and instructions
+        title = mainFont.render("Graph", 1, titleColour)
+        screen.blit(title, (width + 10, 20))
+
+        instruct = mainFont.render("Select 'n' to add another function to the graph. ", 1, black)
+        screen.blit(instruct, (width + 10, 70))
+
+        instruct = mainFont.render("Select 'q' to start over. ", 1, black)
+        screen.blit(instruct, (width + 10, 100))
+
+        #Displaying the y-intercept
+        x = 0
+        try:
+            y = eval(self.__eq) #Get the y value when x is equal to 0
+            y = round(y,2) #Get the rounded y value
+            #Display messages and information
+            instruct = mainFont.render("Select 'y' to plot the intercept. ", 1, black)
+            screen.blit(instruct, (width + 20, 150))
+
+            instruct = mainFont.render("The y-intercept is at (0,%s)"%(str(y)), 1, black)
+        except: 
+            y = 'undefined'
+            instruct = mainFont.render("The y-intercept is undefined. ", 1, black)
+        screen.blit(instruct, (width + 10, 130)) #Different message dependent on wether try worked or the except was called
+
+        #Offer option to resize grid
+        instruct =  mainFont.render("Select 's',  'm', 'l' or 'o' for gridsizes. ",1, black)
+        screen.blit(instruct, (width+10, height-70))
+
+        #Reset clip of screen
+        screen.set_clip(None)
+
+        #Let user find coordinate at input x value
+        instruct = mainFont.render("Type in a value of x and select 'Enter' to plot the point. ", 1, (0,0,200))
+        screen.blit(instruct, (width + 20, 180))
+
+        #Plotting of x values
+        xValues =  [] #Numbers or '-' or '.' entered are stored here
+        xVal  =  '?' #Input stored in xValues is stored in integer form here
+        yVal  = '?' #The corresponding y value to the xVal of the equation is stored here
+
+
+
+        
+        # run an infinite loop to control the window
+        inputNotDone = True #The while loop will run as long as inputNotDone is True
+        while inputNotDone:
+            #clip the screen to show  x and y values
+            screen.set_clip(width+10, 180, fullWidth, 230)
+            screen.fill(white)
+
+            #xDisplay is all elements in xValues joined together in order
+            ph = " ".join(xValues)
+            xDisplay =  ph.replace(" ", "")
+
+            #Display the x value entered and the corresponding coordinate
+            plotx = mainFont.render("x = "+str(xDisplay),1,(0,0,200))
+            screen.blit(plotx, (width+10, 180))
+            ploty = mainFont.render("(%s,%s)"%(str(xVal),str(yVal)),1,(0,0,200))
+            screen.blit(ploty,(width+210, 180))
+            screen.set_clip(None)
+
+            #Update display
+            pygame.display.update()
+
+            #Keyboard and mouse actions
+            for event in pygame.event.get():
+                #If the user selects 'quit' the program closes properly
+                if event.type == pygame.QUIT:
+                    inputNotDone = False #The loop ends
+
+                #commands for starting over and their features
+                elif event.type == pygame.KEYDOWN:
+
+                    if event.key == K_q: #If 'q' is entered
+                        equationsDraw = [] #equationsDraw is re-initialised so previously entered equations are deleted
+                        grapher.Graph() #The graphing calculator starts over
+
+                    elif event.key == K_n: #If 'n' is entered
+                        equationsDraw.append(self.__eq) #the current equation is added to equationsDraw
+                        grapher.Graph(False) #The Graph method is called so the user can enter a new equation without the current ones being cleared
+
+                    
+                    elif event.key == K_y: #If 'y' is entered
+                        try:
+                            pygame.draw.circle(screen, (220,20,60), ((width/2), (height/2)-y*self.__k),4) #A circle is drawn at the y-intercept
+                        except(TypeError):#No circle is drawn if there is no y-intercept
+                            pass
+                    
+                    #resize commands
+                    #The graph is resized with a different value of k for each inpu
+                    elif event.key == K_s:
+                        graphSizer(25)
+                        
+                    elif event.key == K_m:
+                        graphSizer(20)
+                    
+                    elif event.key == K_l:
+                        graphSizer(10)
+                    
+                    elif event.key == K_o:
+                        graphSizer(5)
+                    
+
+                    #Integers are appended to xValues
+                    elif event.key == K_1:
+                        xValues.append("1")
+                    elif event.key == K_2:
+                        xValues.append("2")
+                    elif event.key == K_3:
+                        xValues.append("3")
+                    elif event.key == K_4:
+                        xValues.append("4")
+                    elif event.key == K_5:
+                        xValues.append("5")
+                    elif event.key == K_6:
+                        xValues.append("6")
+                    elif event.key == K_7:
+                        xValues.append("7")
+                    elif event.key == K_8:
+                        xValues.append("8")
+                    elif event.key == K_9:
+                        xValues.append("9")
+                    elif event.key == K_0:
+                        xValues.append("0")
+                    
+                    #'-' is appended to xValues
+                    elif event.unicode == u'-':
+                        xValues.append("-")
+                    
+                    #'.' is appended to xValues
+                    elif event.unicode == u'.':
+                        xValues.append(".")
+                    #As long as there is at least one element in xValues, the last element is deleted if 'backspace' is selected
+                    elif event.key == K_BACKSPACE and xValues !=[]:
+                        xValues.pop()
+                    
+                    #If enter is selected, a circle is drawn at the coordinates the x-value entered represents on the equation
+                    elif event.key == K_RETURN:
+                        try:
+                            x = xVal = float(xDisplay)
+                            yVal = eval(self.__eq)
+                            pygame.draw.circle(screen, (0,255,0), (width/2+x*self.__k,height/2-yVal*self.__k),4)
+                        except: 
+                            pass
+
+
+
+        #If the loop is over, the user has selected 'quit' and the program is stopped
+        pygame.quit()
+        sys.exit()
+
+#Class that defines the part of the calculator that is the polynomial calculator
+class PolynomialCalculator():
+
+    def __init__(self):
+        self.__Power = 0 #Represents the power of the polynomial entered by the user
+        self.__Poly = Polynomial(0,0) #Will store the polynomial entered by the user
+        self.__dif = False #Is used to determine whether the user wants to differentiate or integrate the polynomial
+
+    #Method that runs the polynomial calculator giving access to the private methods of the PolynomialCalculator class
+    def RunCalc(self):
+        self.__SetPower()
+        self.__GetCoefficients()
+        self.__Selection()
+        self.__Calc()
+
+    #Lets the user enter the value of the greatest power in the polynomial they want to enter
+    def __SetPower(self):
+
+        #Clearing the screen so text doesn't overlap
+        screen.set_clip(0,0, fullWidth, height)
+        screen.fill(white)
+        screen.set_clip(None)
+
+        #Displaying the title and instructions
+        title = titleFont.render("Welcome to the polynomial calculator", 1, titleColour)
+        screen.blit(title, (width/2, 10))
+        instruct = mainFont.render("Please enter the largest power in your polynomial. ", 1, black)
+        screen.blit(instruct, (30, 50))
+
+        maxPower = [] #List that will contain the integers entered by the user
+        cont = True #Used to determine if the loop goes on
+        done = False #Used to determine if the user wants to exit the program entirely
+
+        
+
+        while cont:
+            #Clearing part of the screen so new messages can be displayed
+            screen.set_clip(width+10, 100, fullWidth, height)
+            screen.fill(white)
+
+            #join maxPower without commas to create the number the user has entered and set is as the Power
+            ph = " ".join(maxPower)
+            self.__Power = ph.replace(" ","")
+
+            #Display the power entered by the user
+            indicesShow = mainFont.render("Function: power = %s"%(self.__Power), 1, titleColour)
+            screen.blit(indicesShow,(width+10,100))
+
+            screen.set_clip(None)
+
+            #Update display
+            pygame.display.update()
+
+            for event in pygame.event.get(): #Get user inputs
+                if event.type == pygame.QUIT: #If the user selects 'quit'
+                    cont = False #To leave the while loop
+                    done = True #Set condition to True so the program knows to quit after exiting loop
+                
+                elif event.type == pygame.KEYDOWN:
+                    
+                    #If an integer is entered, append it the array maxPower
+                    if event.key == K_1:
+                        maxPower.append("1")
+                    elif event.key == K_2:
+                        maxPower.append("2")
+                    elif event.key == K_3:
+                        maxPower.append("3")
+                    elif event.key == K_4:
+                        maxPower.append("4")
+                    elif event.key == K_5:
+                        maxPower.append("5")
+                    elif event.key == K_6:
+                        maxPower.append("6")
+                    elif event.key == K_7:
+                        maxPower.append("7")
+                    elif event.key == K_8:
+                        maxPower.append("8")
+                    elif event.key == K_9:
+                        maxPower.append("9")
+                    elif event.key == K_0:
+                        maxPower.append("0")
+                    
+                    #If the user selects 'backspace' and the array maxPower isn't empty, delete the last item in maxPower
+                    elif event.key == K_BACKSPACE and maxPower !=[]:
+                        maxPower.pop()
+                    
+                    
+                    elif event.key == K_q: #If the user selects 'q'
+                        self.RunCalc() #Restart the polynomial calculator part of the calculator
+
+                    elif event.key == K_RETURN: #If the user selects 'enter'
+                        cont = False #Leave the loop to continue with the next part of the calculator
+        if done: #If user selected 'quit'
+            pygame.quit() #quit the program
+        else:
+            self.__Power = int(self.__Power) #Change self.__Power to integer form
+
+    def __GetCoefficients(self):
+        
+        #Clear the screen so messages don't overlap
+        screen.set_clip(0,0, fullWidth, height)
+        screen.fill(white)
+        screen.set_clip(None)
+
+        #Display a title and instructions to the screen
+        title = titleFont.render("Welcome to the polynomial calculator", 1, titleColour)
+        screen.blit(title, (width/2, 10))
+        instruct = mainFont.render("Please enter the coefficients of your polynomial in order, starting from the greatest exponent of x. ", 1, black)
+        screen.blit(instruct, (30, 40))
+        instruct = mainFont.render("For example, 7x^3 + 5x^2 + 3, would be entered as: 7, 5, 0, 3. ", 1, black)
+        screen.blit(instruct, (30, 65))
+        instruct = mainFont.render("Select enter to continue to the next power. Select f to quit to the front page. Select r to re-enter the power.", 1, black)
+        screen.blit(instruct, (30, 90))
+
+        
+        cont = True #Used to determine if the while loop should continue
+        done = False #Used to determine wether or not the program should be quit
+        listOfCoef = [] #Used to store all the coefficients of the polynomial the user is entering
+        count = self.__Power + 1 #The number of coefficients that need to be entered, the number of times the next while loop needs to be looped through
+
+
+
+        while cont:
+
+            coef = [] #Stores one coefficient at a time
+
+            #Sets part of the screen blank, so the information previously displayed there, can be updated
+            screen.set_clip(20, 110, fullWidth, height)
+            screen.fill(white)
+
+            #greaterThan = True for count number of iterations of the cont while loop after which the loop is left
+            if count >= 1:
+                greaterThan = True #Used to deterimine when to leave the greaterThan while loop
+            else:
+                cont = False #set to leave the cont while loop
+
+
+            count -= 1 #Subtract one from the count of the number of coefficients yet to be entered
+            
+            #Get a coefficient from the user
+            while greaterThan == True:
+                #Fill some of the screen so new messages can be printed
+                screen.set_clip(50, 150, fullWidth, height)
+                screen.fill(white)
+                screen.set_clip(None)
+
+                #Join together the coefficients entered in order, to form a number stored as coefUse
+                ph = " ".join(coef)
+                coefUse = ph.replace(" ","")
+                
+                #Display the coefficient entered to the screen
+                indicesshow = mainFont.render("Coefficient = "+(coefUse), 1, titleColour)
+                screen.blit(indicesshow,(50,150))
+
+                #If the list isn't empty, print the polynomial entered
+                if listOfCoef != None:
+                    
+                    indicesshow = mainFont.render("Function: y = "+(Polynomial(self.__Power,*listOfCoef)._str()), 1, titleColour)
+                    screen.blit(indicesshow,(50,180))
+
+                screen.set_clip(None)
+
+                #Update the display
+                pygame.display.update()
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT: #If the user seæects quit
+                        cont = False #End the loop
+                        done = True #Set the variable that decides whether or not to quit the program, to True
+                    
+                    elif event.type == pygame.KEYDOWN:
+                        
+                        #If an integer is input, append it to coef
+                        if event.key == K_1:
+                            coef.append("1")
+                        elif event.key == K_2:
+                            coef.append("2")
+                        elif event.key == K_3:
+                            coef.append("3")
+                        elif event.key == K_4:
+                            coef.append("4")
+                        elif event.key == K_5:
+                            coef.append("5")
+                        elif event.key == K_6:
+                            coef.append("6")
+                        elif event.key == K_7:
+                            coef.append("7")
+                        elif event.key == K_8:
+                            coef.append("8")
+                        elif event.key == K_9:
+                            coef.append("9")
+                        elif event.key == K_0:
+                            coef.append("0")
+                        
+                        #If one of the mathematical symbols below is input, append it to coef
+                        elif event.unicode == u'*':
+                            coef.append("*")
+                        elif event.unicode == u'+':
+                            coef.append("+")
+                        elif event.unicode == u'/':
+                            coef.append("/")
+                        elif event.unicode == u'-':
+                            coef.append("-")
+                        elif event.unicode == u'.':
+                            coef.append(".")
+                        elif event.unicode == u'(':
+                            coef.append("(")
+                        elif event.unicode == u')':
+                            coef.append(")")
+                        elif event.unicode == u'^':
+                            coef.append("**")
+
+                        #If 'backspace' is entered and coef isn't empty, remove the last item in coef
+                        elif event.key == K_BACKSPACE and coef !=[]:
+                            coef.pop()
+                        
+                        #If 'f' is entered return to the main
+                        elif event.key == K_f:
+                            polynomialCalculator.RunCalc()
+                    
+                        #If 'r' is entered, restart the polynomial calculator part of the calculator
+                        elif event.key == K_r:
+                            polynomialCalculator.RunCalc()
+
+                        #If 'return' is entered, leave the greaterThan loop
+                        elif event.key == K_RETURN and coef != []:
+                            greaterThan = False
+            
+            
+            if count >= 0: #If the count is big enough that a new coefficient has been input this time through the loop
+                listOfCoef.append(coefUse) #Add the input coefficient to the list of coefficients
+            
+        if done: 
+            pygame.quit() #Quit the program if the user has selected 'quit'
+        else:
+            self.__Poly = Polynomial(self.__Power,*listOfCoef) #Create an instance of the polynomial entered
+     
+    def __Selection(self):
+        
+        #Clear the screen so messages don't overlap
+        screen.set_clip(0,0, fullWidth, height)
+        screen.fill(white)
+        screen.set_clip(None)
+
+        #Display a title and some instructions and messages to the screen
+        title = titleFont.render("Welcome to the mulitpurpose calculator", 1, titleColour)
+        screen.blit(title, (width/2, 10))
+        instruct = mainFont.render("If you wish to integrate the polynomial: %s, select 'i'."%((self.__Poly)._str()), 1, black)
+        screen.blit(instruct, (30, 50))
+        instruct = mainFont.render("If you wish to differentiate thet polynomial: %s, select 'd'."%((self.__Poly)._str()), 1, black)
+        screen.blit(instruct,(30, 80))
+        instruct = mainFont.render("If you wish re-enter the polynomial select 'r'.", 1, black)
+        screen.blit(instruct, (30, 110))
+        instruct = mainFont.render("If you wish return to the front page select 'f'.", 1, black)
+        screen.blit(instruct, (30, 140))
+
+        cont = True #Used to determine whether or not the while loop should continue
+        stop = False #Used to determine whether to quit the program or not
+
+        while cont == True:
+            #Update the display
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: #If the user selects 'quit'
+                    cont = False #The loop is ended
+                    stop = True #The checker is set to True
+
+                elif event.type == pygame.KEYDOWN:
+
+                    if event.key == K_i: #If i is entered
+                        self.__dif = False #The polynomial is not getting differentiated(only other option is integration)
+                        cont = False #The loop ends
+                        
+                        
+                    elif event.key == K_d: #If d is entered
+                        self.__dif = True #The polynomial is getting differentiated
+                        cont = False #The loop ends
+                        
+                    elif event.key == K_r: #If 'r' is entered 
+                        polynomialCalculator.RunCalc() #The polynomial calculator restarts
+                    
+                    elif event.key == K_f: #If 'f' is entered
+                        main() #The program returns to the front page
+                        
+        if stop == True: #If the quit check is true
+            pygame.quit() #Quit the program
+
+    def __Calc(self):
+
+        #Clear the screen so messages don't overlap
+        screen.set_clip(0,0, fullWidth, height)
+        screen.fill(white)
+        screen.set_clip(None)
+
+        #Display title and messages to screen
+        title = titleFont.render("Welcome to the mulitpurpose calculator", 1, titleColour)
+        screen.blit(title, (width/2, 10))
+        instruct = mainFont.render("Your polynomial:  y = "+((self.__Poly)._str()), 1, black)
+        screen.blit(instruct, (30, 50))
+
+        #If integrating, display the indefinite integral and offer to find the definite integral
+        if self.__dif == False:
+            instruct = mainFont.render("Indefinite integral:  %sdx = %s"%((self.__Poly)._str(), (self.__Poly)._integ()), 1, black)
+            screen.blit(instruct,  (30, 80))
+            instruct = mainFont.render("If you wish to find the definite integral, select 'i'. ", 1, black)
+            screen.blit(instruct,(30,110))
+            tempHeight = 110
+        
+        #If differentiating, display the derivative
+        else: 
+            instruct = mainFont.render("Derivative: dy/dx = %s"%((self.__Poly)._differ()), 1, black)
+            screen.blit(instruct,  (30, 80))
+            tempHeight = 80
+        
+        #Display messages to the screen
+        instruct = mainFont.render("If you wish re-enter the polynomial select 'r'.", 1, black)
+        screen.blit(instruct, (30, tempHeight+30))
+        instruct = mainFont.render("If you wish return to the front page select 'f'.", 1, black)
+        screen.blit(instruct, (30, tempHeight+60))
+
+
+        limit1 = [] #The first limit for finding the definite integral
+        limit2 = [] #The second limit for finding the definite integral
+        limitUse1 = None #If the inputs are for the first limit, second limit or neither
+        definite = False #If the definite integral needs to be found
+        cont = True #Determines whether or not the loop continues
+        done = False #Determines whether or not to quit the program
+        defIntegFound = False #Whether or not the definite integral has been found
+
+        
+
+        while cont:
+
+            #If the definite integral hasn't been found
+            if defIntegFound == False:
+                #If the user has asked for the integral and the definite integral
+                if self.__dif == False and definite == True:
+
+                    #Clear part of the screen so messages don't overlap
+                    screen.set_clip(width+10, 100, fullWidth, -100)
+                    screen.fill(white)
+                    screen.set_clip(None)
+
+                    screen.set_clip(0, 200, fullWidth, 250)
+                    screen.fill(white)
+                    screen.set_clip(None)
+
+                    #join the param arrays without commas to get number values of param1 and param2
+                    ph = " ".join(limit1)
+                    param1 = ph.replace(" ","")
+                    ph = " ".join(limit2)
+                    param2 = ph.replace(" ","")
+
+                    
+                    #Display the lower limit
+                    message = mainFont.render("Lower limit: %s"%(param1), 1, titleColour)
+                    screen.blit(message,(30,210))
+
+                    #If the lower limit has been entered, display the upper limit
+                    if not limitUse1:
+                        message = mainFont.render("Upper limit: %s"%(param2), 1, titleColour)
+                        screen.blit(message,(30,230))
+            #If the definite integral has been found
+            else:    
+                eq = (self.__Poly)._integ() #The equation to use is the integrated polynomial
+                eq = eq.replace("+c","") #Remove the '+c' so the equation can be used to find the definite integral
+                eq = eq.replace("^","**") #Replace the '^' with '**' which the program undertands as 'to the power of'
+
+                eq1 = eq.replace("x",param1) #Equation 1 is the integral with the lower limit subbed in for x
+                eq2 = eq.replace("x",param2) #Equation 2 is the integral with the upper limit subbed in for x
+
+                result = eval(eq2) - eval(eq1) #Finding the definite integral between the limits entered by the user
+
+                #Clearing the screen so messages don't overlap
+                screen.set_clip(0, 30, fullWidth, 250)
+                screen.fill(white)
+                screen.set_clip(None)
+
+                #Displaying the definite and indefinite integral along with other messages
+                instruct = mainFont.render("Indefinite integral: ∫%sdx = %s"%((self.__Poly)._str(), (self.__Poly)._integ()), 1, black)
+                screen.blit(instruct, (30, 30))
+                instruct = mainFont.render("Definite integral from %s, to %s = %s"%(param1, param2, result), 1, black)
+                screen.blit(instruct, (30, 60))
+                instruct = mainFont.render("Press 'r' to re-enter the polynomial. ", 1, titleColour)
+                screen.blit(instruct, (30, 230))
+                instruct = mainFont.render("Press enter to return to front page. ", 1, titleColour)
+                screen.blit(instruct, (30, 250))
+
+            #Update the screen
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: #If the user selects 'quit'
+                    cont = False #Loop ends
+                    done = True #When checked tells the program to quit
+                elif event.type == pygame.KEYDOWN:
+
+                    #When an integer is entered, if finding limit1, it is added to limit1. If finding limit2 it is added to limit2.
+                    if event.key == K_1:
+                        if limitUse1:
+                            limit1.append("1")
+                        elif limitUse1 == False:
+                            limit2.append("1") 
+                    elif event.key == K_2:
+                        if limitUse1:
+                            limit1.append("2")
+                        elif limitUse1 == False:
+                            limit2.append("2")
+                    elif event.key == K_3:
+                        if limitUse1:
+                            limit1.append("3")
+                        elif limitUse1 == False:
+                            limit2.append("3")
+                    elif event.key == K_4:
+                        if limitUse1:
+                            limit1.append("4")
+                        elif limitUse1 == False:
+                            limit2.append("4")
+                    elif event.key == K_5:
+                        if limitUse1:
+                            limit1.append("5")
+                        elif limitUse1 == False:
+                            limit2.append("5")
+                    elif event.key == K_6:
+                        if limitUse1:
+                            limit1.append("6")
+                        elif limitUse1 == False:
+                            limit2.append("6")
+                    elif event.key == K_7:
+                        if limitUse1:
+                            limit1.append("7")
+                        elif limitUse1 == False:
+                            limit2.append("7")
+                    elif event.key == K_8:
+                        if limitUse1:
+                            limit1.append("8")
+                        elif limitUse1 == False:
+                            limit2.append("8")
+                    elif event.key == K_9:
+                        if limitUse1:
+                            limit1.append("9")
+                        elif limitUse1 == False:
+                            limit2.append("9")
+                    elif event.key == K_0:
+                        if limitUse1:
+                            limit1.append("0")
+                        elif limitUse1 == False:
+                            limit2.append("0")
+                    
+                    elif event.key == K_i: #If 'i' is entered
+                        definite = True #The definite integral needs to be found
+                        limitUse1 = True #limit1 needs to be found
+
+                    elif event.key == K_r: #If 'r' is entered
+                        self.RunCalc() #Return to the start of the polynomial calculator
+
+                    elif event.key == K_f: #If 'f' is entered
+                        main() #Return to the main
+                    
+                    #If 'backspace' is entered, and the limit being used is not empty, remove the last item in the limit being used.
+                    elif event.key == K_BACKSPACE:
+                        if limitUse1 and limit1 != []:
+                            limit1.pop()
+                        elif not limitUse1 and limit2 != []:
+                            limit2.pop()
+                    
+
+                    elif event.key == K_RETURN: #If 'return' is entered
+                        #Return to the main if the definite integral has been found
+                        if defIntegFound == True:
+                            main()
+                        
+                        #Set limit2 as the one to be found if limit1 is longer than 0
+                        if len(limit1)>0:
+                            limitUse1 = False
+
+                        #Set the definite integral as found if limit2 is longer than 0
+                        if len(limit2)>0:
+                            defIntegFound = True #Saying that the definite integral has been found
+                        
+        if done: #If the user has entered 'quit'
+            pygame.quit() #Exit the program
+
+class Polynomial: 
+
+    def __init__(self, power, *coefficients):
+        self.__coefficients = list(coefficients) #A list of the coefficients of the polynomial
+        self.__power = power #The greatest power in the polynomial
+
+    #Method that returns the differential of the polynomial
+    def _differ(self):
+        dif_coef = [] #List of the coefficients of the differentiated polynomial
+        exponent = self.__power  #The power of the part of the polynomial being differentiated
+
+        #Cycling through the coefficients in self.__coefficients
+        for i in range(0,len(self.__coefficients)-1):
+            
+            if exponent > 1: #If the exponent is greater than 1
+                num = round((int(self.__coefficients[i]) * exponent),2) #Multiply the coefficient and the exponent
+                dif_coef.append(str(num)) #Append the result to the list of coefficients for the differentiated polynomial
+            elif exponent == 1: #If the exponent is 1 the coefficient doesn't change(1*x = x)
+                dif_coef.append(self.__coefficients[i]) #Append the coefficient to the list of coefficients for the differentiated polynomial
+            
+            exponent -= 1 #Subtract 1 from the exponent so the correct power is used for the next coefficient
+
+        return Polynomial(self.__power-1, *dif_coef)._str() #Return the differentiated polynomial(a polynomial with the list of coefficients for the differentiated polynomial and a max power 1 smaller)
+
+    #Method that returns the definite integral of the polynomial
+    def _integ(self):
+        int_coef = [] #List of the coefficients of the integrated polynomial
+        exponent = self.__power+1 #The max power of the polynomial plus 1, to be used for reverse chain rule integration
+
+        #Cycling through the coefficients in self.__coefficients
+        for i in range(0,len(self.__coefficients)):
+            
+            if exponent>1: #If the exponent is greater than 1
+                val = round((int(self.__coefficients[i]) / exponent),2) #Divide the coefficient with its corresponding power+1
+                int_coef.append(str(val)) #Append the result to the list of coefficients for the integrated polynomial
+
+            elif exponent == 1: #If the exponent is 1 the coefficient doesn't change
+                int_coef.append(self.__coefficients[i]) #Append the coefficient to the list of coefficients for the integrated polynomial
+
+            exponent -= 1 #Subtract 1 from the exponent so the correct exponent is used for the next coefficient
+        
+        return Polynomial(self.__power+1, *int_coef)._str() + "+c" #Return the integrated polynomial
+
+    #Method that returns the string version of the polynomial
+    def _str(self):
+        
+        #Function that returns the string version of x^degree, where degree is entered to the function
+        def expression(degree):
+            if degree == 0:
+                res = ""
+            elif degree == 1:
+                res = "x"
+            else:
+                res = "x^"+str(degree) #idfn
+            return res
+                
+        degree = self.__power #The degree is the greatest power in the polynomial
+        res = "" #Used to store the string version of the polynomial
+        value = "" #The final string version of the polynomial that is returned 
+        
+        length = len(self.__coefficients) #The length of the coefficients 
+
+        #Getting the coefficient and x value's correctly matched together
+        for i in range(0, length):
+            try:
+                coef = eval(self.__coefficients[i]) #The coefficient of the x being used
+
+                #If the absolute value of the coefficient is 1 the coefficient is not included so '+x' or '-x' is displayed rather than '+1x' or '-1x'
+                if abs(coef) == 1 and i < degree :
+                    res += f"{'+' if coef>0 else '-'}{expression(degree - i)}"
+                #As long as the coefficient isn't zero, the symbol, the coefficient and x^degree is added to res
+                elif coef != 0:
+                    res += f"{coef:+}{expression(degree - i)}"
+                
+                
+            except:
+                pass
+
+        value = res.lstrip('+') #There is a plus too many at the very start of res that is removed
+
+        return value #Returning the string version of the polynomial
+
+
+grapher = Grapher(25)
+polynomialCalculator = PolynomialCalculator()
+main()
